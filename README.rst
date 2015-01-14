@@ -42,6 +42,15 @@ Making ``CategoryListings`` requests::
         print(item.text)
 
 
+Making ``TrafficHistory`` requests::
+
+    api = AwisApi(ACCESS_ID, SECRET_ACCESS_KEY)
+    tree = r = api.traffic_history('http://www.yahoo.com', Start='20080923', Range=24)
+    for item in tree.findall("//{%s}Data" % api.NS_PREFIXES["awis"]):
+        print item.find(".//{%s}Date" % api.NS_PREFIXES["awis"]).text
+        print item.find(".//{%s}PageViews//{%s}PerUser" % (api.NS_PREFIXES["awis"], api.NS_PREFIXES["awis"])).text
+
+
 Changelog
 =========
 

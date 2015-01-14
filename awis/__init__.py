@@ -68,6 +68,8 @@ class AwisApi(object):
     MAX_BATCH_REQUESTS = 5
     MAX_SITES_LINKING_IN_COUNT = 20
     MAX_CATEGORY_LISTINGS_COUNT = 20
+    MAX_TRAFFIC_HISTORY_RANGE = 31
+    MIN_TRAFFIC_HISTORY_STARTDATE = '20070801'
 
     def __init__(self, access_id, secret_access_key):
         self.access_id = access_id
@@ -169,6 +171,42 @@ class AwisApi(object):
 
             for i, url in enumerate(urls):
                 params.update({"SitesLinkingIn.%d.Url" % (i + 1): urllib.quote(url)})
+
+        return self.request(params)
+
+    def traffic_history(self, urls, Range=31, Start=None):
+        if Range > self.MAX_TRAFFIC_HISTORY_RANGE:
+            raise RuntimeError("Maximum traffic history result days is %s." % self.MAX_TRAFFIC_HISTORY_RANGE)
+
+        if Start is not None:
+            starttime = datetime.datetime.strptime(Start, '%Y%m%d')
+            earliest = datetime.datetime.strptime(self.MIN_TRAFFIC_HISTORY_STARTDATE, '%Y%m%d')
+            if starttime - earliest < datetime.timedelta(0):
+                raise RuntimeError("The first start available date is %s." % self.MIN_TRAFFIC_HISTORY_STARTDATE)
+
+        params = {"Action": "TrafficHistory"}
+        if not isinstance(urls, (list, tuple)):
+            params.update({
+                "Url": urllib.quote(urls),
+                "ResponseGroup": "History",
+                "Range": Range
+                })
+            if Start is not None:
+                params.update({"Start": Start})
+        else:
+            if len(urls) > self.MAX_BATCH_REQUESTS:
+                raise RuntimeError("Maximum number of batch URLs is %s." % self.MAX_BATCH_REQUESTS)
+
+            params.update({
+                "TrafficHistory.Shared.ResponseGroup": "History",
+                "TrafficHistory.Shared.Range": Range,
+            })
+
+            if Start is not None:
+                params.update({"TrafficHistory.Shared.Start": Start})
+
+            for i, url in enumerate(urls):
+                params.update({"TrafficHistory.%d.Url" % (i + 1): urllib.quote(url)})
 
         return self.request(params)
 
